@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Employee Leave Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/nav', { active: 'dashboard' }) %>
+
+  <main class="page">
+    <%- include('partials/flash') %>
+
+    <h1 class="page-title">Welcome, <%= employee.name %>!</h1>
+    <p class="page-subtitle">Here is your current leave summary.</p>
+
+    <section class="cards">
+      <div class="card">
+        <div class="card-label">Total Leaves</div>
+        <div class="card-value"><%= summary.total %></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Used Leaves</div>
+        <div class="card-value"><%= summary.used %></div>
+      </div>
+      <div class="card card-highlight">
+        <div class="card-label">Remaining Leaves</div>
+        <div class="card-value"><%= summary.remaining %></div>
+      </div>
+    </section>
+
+    <section class="quick-links">
+      <a href="/apply-leave" class="btn btn-primary">Apply for Leave</a>
+      <a href="/leave-status" class="btn btn-secondary">View Leave Status</a>
+    </section>
+  </main>
+</body>
+</html>

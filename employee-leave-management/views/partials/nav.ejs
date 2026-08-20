@@ -1,0 +1,14 @@
+<!-- views/partials/nav.ejs: top navigation shown on every authenticated page -->
+<header class="topbar">
+  <div class="topbar-brand">Employee Leave Management System</div>
+
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+
+  <nav class="topbar-nav" id="topbarNav">
+    <a href="/dashboard" class="<%= active === 'dashboard' ? 'active' : '' %>">Dashboard</a>
+    <a href="/apply-leave" class="<%= active === 'apply-leave' ? 'active' : '' %>">Apply Leave</a>
+    <a href="/leave-status" class="<%= active === 'leave-status' ? 'active' : '' %>">Leave Status</a>
+    <span class="topbar-user">Hi, <%= employee.name %> (<%= employee.employeeId %>)</span>
+    <a href="/logout" class="logout-link">Logout</a>
+  </nav>
+</header>

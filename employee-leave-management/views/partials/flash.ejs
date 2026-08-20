@@ -1,0 +1,4 @@
+<!-- views/partials/flash.ejs: one-time success/error banner -->
+<% if (typeof flash !== 'undefined' && flash) { %>
+  <div class="alert alert-<%= flash.type %>"><%= flash.message %></div>
+<% } %>
