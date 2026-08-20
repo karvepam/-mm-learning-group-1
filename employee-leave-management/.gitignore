@@ -1,0 +1,4 @@
+node_modules/
+database/database.db
+.env
+npm-debug.log*
