@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pending Leave Requests - Employee Leave Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/nav', { active: 'manager-pending' }) %>
+
+  <main class="page">
+    <%- include('partials/flash') %>
+
+    <h1 class="page-title">Pending Leave Requests</h1>
+    <p class="page-subtitle">Approve or reject employee leave requests.</p>
+
+    <% if (!leaves || leaves.length === 0) { %>
+      <div class="empty-state">
+        <p>No pending leave requests right now.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrapper">
+        <table class="leave-table">
+          <thead>
+            <tr>
+              <th>Leave ID</th>
+              <th>Employee</th>
+              <th>Leave Type</th>
+              <th>From Date</th>
+              <th>To Date</th>
+              <th>Reason</th>
+              <th>Applied Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% leaves.forEach(function(leave) { %>
+              <tr>
+                <td><%= leave.id %></td>
+                <td><%= leave.employeeName %> (<%= leave.employeeId %>)</td>
+                <td><%= leave.leaveType %></td>
+                <td><%= leave.fromDate %></td>
+                <td><%= leave.toDate %></td>
+                <td><%= leave.reason %></td>
+                <td><%= leave.appliedDate %></td>
+                <td>
+                  <span class="status-badge status-<%= leave.status.toLowerCase() %>"><%= leave.status %></span>
+                </td>
+                <td>
+                  <div class="action-row">
+                    <form action="/leave-requests/<%= leave.id %>/approve" method="POST" style="display:inline">
+                      <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                    </form>
+
+                    <form action="/leave-requests/<%= leave.id %>/reject" method="POST" class="reject-form" style="display:inline">
+                      <input type="text" name="rejectionReason" placeholder="Rejection reason" required class="input-sm" />
+                      <button type="submit" class="btn btn-secondary btn-sm">Reject</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
