@@ -37,6 +37,7 @@ router.post('/login', (req, res) => {
     id: employee.id,
     employeeId: employee.employeeId,
     name: employee.name,
+    role: employee.role || 'Employee',
   };
 
   res.redirect('/dashboard');
