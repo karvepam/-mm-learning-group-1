@@ -14,6 +14,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Delegated confirm handler for cancel/destructive actions
+  // Usage: add data-confirm="Are you sure?" to <a>, <button>, or any element that triggers navigation/submission.
+  document.addEventListener('click', function (event) {
+    // Find the nearest element with data-confirm in the click path.
+    var el = event.target && event.target.closest ? event.target.closest('[data-confirm]') : null;
+    if (!el) return;
+
+    // If the element is disabled, let native behavior handle it.
+    if (el.disabled) return;
+
+    var message = el.getAttribute('data-confirm');
+    if (!message) return;
+
+    var ok = window.confirm(message);
+    if (!ok) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
+
   // Apply Leave form validation
   var applyLeaveForm = document.getElementById('applyLeaveForm');
 
