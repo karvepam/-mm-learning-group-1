@@ -1,6 +1,6 @@
 // database/db.js
 // Creates/opens the SQLite database file, defines the schema and seeds
-// a sample employee account so the app works immediately after `npm install`.
+// sample employee/manager accounts so the app works immediately after `npm install`.
 
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -38,16 +38,79 @@ db.exec(`
   );
 `);
 
+// --- Safe schema migrations (ALTER TABLE guarded by PRAGMA table_info) ---
+function getTableColumns(tableName) {
+  return db
+    .prepare(`PRAGMA table_info(${tableName})`)
+    .all()
+    .map((c) => c.name);
+}
+
+function addColumnIfMissing(tableName, columnName, columnDefinitionSql) {
+  const cols = getTableColumns(tableName);
+  if (!cols.includes(columnName)) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnDefinitionSql};`);
+  }
+}
+
+// employees additions
+addColumnIfMissing(
+  'employees',
+  'role',
+  "role TEXT NOT NULL DEFAULT 'Employee'"
+);
+addColumnIfMissing(
+  'employees',
+  'leaveStatusLastSeenAt',
+  'leaveStatusLastSeenAt TEXT'
+);
+
+// leaves additions
+addColumnIfMissing('leaves', 'rejectionReason', 'rejectionReason TEXT');
+addColumnIfMissing(
+  'leaves',
+  'statusUpdatedAt',
+  "statusUpdatedAt TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d','now'))"
+);
+addColumnIfMissing('leaves', 'cancelledAt', 'cancelledAt TEXT');
+
+// Ensure existing rows have statusUpdatedAt populated (covers pre-migration rows)
+try {
+  const leavesCols = getTableColumns('leaves');
+  if (leavesCols.includes('statusUpdatedAt')) {
+    db.prepare(
+      "UPDATE leaves SET statusUpdatedAt = strftime('%Y-%m-%d','now') WHERE statusUpdatedAt IS NULL OR statusUpdatedAt = ''"
+    ).run();
+  }
+} catch (e) {
+  // No-op: keeps patterns simple and avoids breaking app startup on older/inconsistent DBs
+}
+
 // --- Seed data ----------------------------------------------------------
 // Seed one sample employee (EMP001 / password123) the first time the app runs.
-const existing = db.prepare('SELECT id FROM employees WHERE employeeId = ?').get('EMP001');
+const existingEmp = db
+  .prepare('SELECT id FROM employees WHERE employeeId = ?')
+  .get('EMP001');
 
-if (!existing) {
+if (!existingEmp) {
   const hashedPassword = bcrypt.hashSync('password123', 10);
   db.prepare(
-    'INSERT INTO employees (employeeId, name, password) VALUES (?, ?, ?)'
-  ).run('EMP001', 'John Doe', hashedPassword);
+    'INSERT INTO employees (employeeId, name, password, role) VALUES (?, ?, ?, ?)'
+  ).run('EMP001', 'John Doe', hashedPassword, 'Employee');
   console.log('Seeded sample employee EMP001 / password123');
+}
+
+// Seed one sample manager (MGR001 / password123) the first time the app runs.
+const existingMgr = db
+  .prepare('SELECT id FROM employees WHERE employeeId = ?')
+  .get('MGR001');
+
+if (!existingMgr) {
+  const hashedPassword = bcrypt.hashSync('password123', 10);
+  db.prepare(
+    'INSERT INTO employees (employeeId, name, password, role) VALUES (?, ?, ?, ?)'
+  ).run('MGR001', 'Jane Manager', hashedPassword, 'Manager');
+  console.log('Seeded sample manager MGR001 / password123');
 }
 
 module.exports = db;
