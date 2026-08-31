@@ -71,6 +71,15 @@ function createLeave({ employeeId, leaveType, fromDate, toDate, reason }) {
 }
 
 /**
+ * Find a single leave request by its id.
+ * @param {number|string} id
+ * @returns {object|undefined}
+ */
+function getLeaveById(id) {
+  return db.prepare('SELECT * FROM leaves WHERE id = ?').get(id);
+}
+
+/**
  * All leave requests submitted by a given employee, most recent first.
  * @param {string} employeeId
  * @returns {object[]}
@@ -259,6 +268,7 @@ module.exports = {
   LEAVE_STATUSES,
   countDays,
   createLeave,
+  getLeaveById,
   getLeavesByEmployeeId,
   getLeavesByEmployeeIdFiltered,
   getLeaveSummary,

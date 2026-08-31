@@ -67,10 +67,14 @@ addColumnIfMissing(
 
 // leaves additions
 addColumnIfMissing('leaves', 'rejectionReason', 'rejectionReason TEXT');
+// NOTE: SQLite disallows ALTER TABLE ... ADD COLUMN with a NOT NULL
+// column whose default is a non-constant expression (e.g. strftime(...))
+// when the table already has rows. Add the column as nullable here and
+// backfill existing rows via UPDATE below instead.
 addColumnIfMissing(
   'leaves',
   'statusUpdatedAt',
-  "statusUpdatedAt TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d','now'))"
+  'statusUpdatedAt TEXT'
 );
 addColumnIfMissing('leaves', 'cancelledAt', 'cancelledAt TEXT');
 
