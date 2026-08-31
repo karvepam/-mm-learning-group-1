@@ -1,6 +1,7 @@
 // public/js/app.js
 // Vanilla JS: mobile nav toggle + client-side validation for the
-// Apply Leave form (the server re-validates everything regardless).
+// Apply Leave form (the server re-validates everything regardless) +
+// show/hide the rejection-reason box on the Approvals page.
 
 document.addEventListener('DOMContentLoaded', function () {
   // Mobile nav toggle
@@ -43,4 +44,17 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+
+  // Approvals page: reveal the rejection-reason box for a given row
+  // instead of submitting a Reject decision with no reason.
+  var rejectToggles = document.querySelectorAll('.reject-toggle');
+
+  rejectToggles.forEach(function (toggle) {
+    toggle.addEventListener('click', function () {
+      var target = document.getElementById(toggle.getAttribute('data-target'));
+      if (target) {
+        target.hidden = !target.hidden;
+      }
+    });
+  });
 });

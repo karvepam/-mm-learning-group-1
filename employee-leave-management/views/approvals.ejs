@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approvals - Employee Leave Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/nav', { active: 'approvals' }) %>
+
+  <main class="page">
+    <%- include('partials/flash') %>
+
+    <h1 class="page-title">Pending Approvals</h1>
+    <p class="page-subtitle">Review and decide on leave requests awaiting your approval.</p>
+
+    <% if (pendingLeaves.length === 0) { %>
+      <div class="empty-state">
+        <p>There are no pending leave requests right now.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrapper">
+        <table class="leave-table">
+          <thead>
+            <tr>
+              <th>Leave ID</th>
+              <th>Employee</th>
+              <th>Leave Type</th>
+              <th>From Date</th>
+              <th>To Date</th>
+              <th>Reason</th>
+              <th>Applied Date</th>
+              <th>Decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% pendingLeaves.forEach(function(leave) { %>
+              <tr>
+                <td><%= leave.id %></td>
+                <td><%= leave.employeeName %> (<%= leave.employeeId %>)</td>
+                <td><%= leave.leaveType %></td>
+                <td><%= leave.fromDate %></td>
+                <td><%= leave.toDate %></td>
+                <td><%= leave.reason %></td>
+                <td><%= leave.appliedDate %></td>
+                <td>
+                  <div class="approval-actions">
+                    <form method="POST" action="/approvals/<%= leave.id %>/decision" class="inline-form">
+                      <input type="hidden" name="decision" value="Approve">
+                      <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                    </form>
+                    <button type="button" class="btn btn-secondary btn-sm reject-toggle" data-target="reject-box-<%= leave.id %>">Reject</button>
+                  </div>
+                  <div class="reject-box" id="reject-box-<%= leave.id %>" hidden>
+                    <form method="POST" action="/approvals/<%= leave.id %>/decision" class="inline-form-stacked">
+                      <input type="hidden" name="decision" value="Reject">
+                      <textarea name="rejectionReason" rows="2" placeholder="Reason for rejection (required)" required></textarea>
+                      <button type="submit" class="btn btn-danger btn-sm">Confirm Reject</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

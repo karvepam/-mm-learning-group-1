@@ -6,7 +6,7 @@ const router = express.Router();
 
 const employeeModel = require('../models/employeeModel');
 const leaveModel = require('../models/leaveModel');
-const requireAuth = require('../middleware/authMiddleware');
+const { requireAuth } = require('../middleware/authMiddleware');
 
 // GET /login - show the login form (skip straight to dashboard if already logged in)
 router.get('/login', (req, res) => {
@@ -37,6 +37,7 @@ router.post('/login', (req, res) => {
     id: employee.id,
     employeeId: employee.employeeId,
     name: employee.name,
+    role: employee.role,
   };
 
   res.redirect('/dashboard');

@@ -12,6 +12,7 @@
   <main class="page">
     <h1 class="page-title">Apply for Leave</h1>
     <p class="page-subtitle">Fill in the details below to submit a new leave request.</p>
+    <p class="page-subtitle">You have <strong><%= summary.remaining %></strong> day(s) remaining.</p>
 
     <% if (typeof errors !== 'undefined' && errors && errors.length > 0) { %>
       <div class="alert alert-error">

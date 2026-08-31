@@ -8,6 +8,9 @@
     <a href="/dashboard" class="<%= active === 'dashboard' ? 'active' : '' %>">Dashboard</a>
     <a href="/apply-leave" class="<%= active === 'apply-leave' ? 'active' : '' %>">Apply Leave</a>
     <a href="/leave-status" class="<%= active === 'leave-status' ? 'active' : '' %>">Leave Status</a>
+    <% if (employee.role === 'Approver') { %>
+      <a href="/approvals" class="<%= active === 'approvals' ? 'active' : '' %>">Approvals</a>
+    <% } %>
     <span class="topbar-user">Hi, <%= employee.name %> (<%= employee.employeeId %>)</span>
     <a href="/logout" class="logout-link">Logout</a>
   </nav>

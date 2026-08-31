@@ -74,10 +74,60 @@ function getLeaveSummary(employeeId) {
   };
 }
 
+/**
+ * All leave requests that are still awaiting a decision, most recent
+ * first, together with the requesting employee's name for display.
+ * @returns {object[]}
+ */
+function getPendingLeaves() {
+  return db
+    .prepare(
+      `SELECT leaves.*, employees.name as employeeName
+       FROM leaves
+       JOIN employees ON leaves.employeeId = employees.employeeId
+       WHERE leaves.status = 'Pending'
+       ORDER BY leaves.id DESC`
+    )
+    .all();
+}
+
+/**
+ * Approve or reject a pending leave request.
+ * @param {number} id - leave id
+ * @param {{decision: 'Approved'|'Rejected', rejectionReason?: string, approvedBy: string}} decision
+ * @returns {object|undefined} the updated leave row, or undefined if the
+ *   id does not exist or the leave is no longer Pending.
+ */
+function decideLeave(id, { decision, rejectionReason, approvedBy }) {
+  if (decision !== 'Approved' && decision !== 'Rejected') {
+    throw new Error("decision must be 'Approved' or 'Rejected'");
+  }
+  if (decision === 'Rejected' && (!rejectionReason || !rejectionReason.trim())) {
+    throw new Error('A rejection reason is required when rejecting a leave request.');
+  }
+
+  const leave = db.prepare('SELECT * FROM leaves WHERE id = ?').get(id);
+  if (!leave || leave.status !== 'Pending') {
+    return undefined;
+  }
+
+  const approvedAt = new Date().toISOString().slice(0, 10);
+
+  db.prepare(
+    `UPDATE leaves
+     SET status = ?, rejectionReason = ?, approvedBy = ?, approvedAt = ?
+     WHERE id = ?`
+  ).run(decision, decision === 'Rejected' ? rejectionReason.trim() : null, approvedBy, approvedAt, id);
+
+  return db.prepare('SELECT * FROM leaves WHERE id = ?').get(id);
+}
+
 module.exports = {
   TOTAL_LEAVES,
   countDays,
   createLeave,
   getLeavesByEmployeeId,
   getLeaveSummary,
+  getPendingLeaves,
+  decideLeave,
 };
