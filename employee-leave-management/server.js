@@ -53,6 +53,13 @@ app.use((req, res) => {
   res.status(404).send('Page not found');
 });
 
-app.listen(PORT, () => {
-  console.log(`Employee Leave Management System running at http://localhost:${PORT}`);
-});
+// Only start listening when this file is run directly (node server.js).
+// When required as a module (e.g. by tests via supertest), just export
+// the configured app so the caller can drive it without binding a port.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Employee Leave Management System running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
