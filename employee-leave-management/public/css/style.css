@@ -494,18 +494,3 @@ textarea {
     padding: 20px 16px 48px;
   }
 }
-
-/* ---------- Duplicates at end (kept for backward-compat) ---------- */
-.status-cancelled {
-  background: #e2e8f0;
-  color: var(--color-secondary);
-}
-
-.btn-danger {
-  background: var(--color-danger);
-  color: #fff;
-}
-
-.btn-danger:hover {
-  filter: brightness(0.95);
-}

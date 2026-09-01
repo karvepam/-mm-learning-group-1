@@ -45,7 +45,7 @@ UPDATE leaves SET status = 'Approved' WHERE id = <someLeaveId>;
 6. (Optional) Attempt to POST directly:
 
 ```bash
-curl -i -X POST http://localhost:3000/leave/<id>/cancel
+curl -i -X POST http://localhost:3000/leave-requests/<id>/cancel
 ```
 
 **Expected**
@@ -57,7 +57,7 @@ curl -i -X POST http://localhost:3000/leave/<id>/cancel
 
 1. Insert another employee and a leave for them in SQLite
 2. Login as EMP001
-3. Attempt to cancel the other employee’s leave by POSTing to `/leave/<theirId>/cancel`
+3. Attempt to cancel the other employee’s leave by POSTing to `/leave-requests/<theirId>/cancel`
 
 **Expected**
 - Leave is not cancelled

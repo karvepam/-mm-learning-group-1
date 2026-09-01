@@ -6,7 +6,9 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
 
-const dbPath = path.join(__dirname, 'database.db');
+// Allows tests (or any other caller) to point the app at an isolated
+// database file instead of the real database.db on disk.
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'database.db');
 const db = new Database(dbPath);
 
 // Enforce foreign key constraints between leaves.employeeId and employees.employeeId
@@ -67,10 +69,14 @@ addColumnIfMissing(
 
 // leaves additions
 addColumnIfMissing('leaves', 'rejectionReason', 'rejectionReason TEXT');
+// NOTE: SQLite disallows ALTER TABLE ... ADD COLUMN with a NOT NULL
+// column whose default is a non-constant expression (e.g. strftime(...))
+// when the table already has rows. Add the column as nullable here and
+// backfill existing rows via UPDATE below instead.
 addColumnIfMissing(
   'leaves',
   'statusUpdatedAt',
-  "statusUpdatedAt TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d','now'))"
+  'statusUpdatedAt TEXT'
 );
 addColumnIfMissing('leaves', 'cancelledAt', 'cancelledAt TEXT');
 

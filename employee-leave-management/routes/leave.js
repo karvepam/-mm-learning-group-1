@@ -17,11 +17,6 @@ function normalizeDateParam(value) {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
-function parseIntId(value) {
-  const n = Number.parseInt(String(value), 10);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
 // GET /apply-leave - show the leave application form
 router.get('/apply-leave', requireAuth, (req, res) => {
   res.render('apply-leave', {
@@ -91,16 +86,13 @@ router.get('/leave-status', requireAuth, (req, res) => {
   let updatedIds = [];
   let updatesBannerMessage;
 
-  const employeeRecord =
-    (employeeModel && typeof employeeModel.getEmployeeById === 'function'
-      ? employeeModel.getEmployeeById(employeeId)
-      : null) || req.session.employee;
-
-  const lastSeenAt =
-    employeeRecord && employeeRecord.leaveStatusLastSeenAt ? new Date(employeeRecord.leaveStatusLastSeenAt) : null;
+  // Read the persisted last-seen timestamp from the DB (not the session --
+  // the session only holds id/employeeId/name/role from login time).
+  const persistedLastSeenAt = employeeModel.getLeaveStatusLastSeenAt(employeeId);
+  const lastSeenAt = persistedLastSeenAt ? new Date(persistedLastSeenAt) : null;
 
   if (lastSeenAt && !Number.isNaN(lastSeenAt.getTime()) && typeof leaveModel.getStatusUpdatesSince === 'function') {
-    const updatesSinceLastSeen = leaveModel.getStatusUpdatesSince(employeeId, lastSeenAt) || [];
+    const updatesSinceLastSeen = leaveModel.getStatusUpdatesSince(employeeId, persistedLastSeenAt) || [];
     if (updatesSinceLastSeen.length > 0) {
       updatedIds = updatesSinceLastSeen
         .map((u) => u.leaveId || u.id || u._id)
@@ -113,17 +105,12 @@ router.get('/leave-status', requireAuth, (req, res) => {
     }
   }
 
-  // Update last seen at to now before render.
-  const now = new Date();
-  if (employeeModel && typeof employeeModel.updateLeaveStatusLastSeenAt === 'function') {
-    employeeModel.updateLeaveStatusLastSeenAt(employeeId, now);
-  } else if (employeeModel && typeof employeeModel.updateEmployee === 'function') {
-    employeeModel.updateEmployee(employeeId, { leaveStatusLastSeenAt: now });
-  } else if (employeeRecord) {
-    employeeRecord.leaveStatusLastSeenAt = now;
-  }
+  // Update last seen at to now before render. Must be an ISO string --
+  // better-sqlite3 cannot bind a raw Date object.
+  const nowIso = new Date().toISOString();
+  employeeModel.updateLeaveStatusLastSeenAt(employeeId, nowIso);
   if (req.session.employee) {
-    req.session.employee.leaveStatusLastSeenAt = now;
+    req.session.employee.leaveStatusLastSeenAt = nowIso;
   }
 
   res.render('leave-status', {
@@ -135,25 +122,35 @@ router.get('/leave-status', requireAuth, (req, res) => {
   });
 });
 
-// POST /leave/:id/cancel - cancel a pending request owned by the logged-in employee
-router.post('/leave/:id/cancel', requireAuth, (req, res) => {
-  const id = parseIntId(req.params.id);
-  if (!id) {
-    req.session.flash = { type: 'error', message: 'Unable to cancel leave request. Please try again.' };
+// POST /leave-requests/:id/cancel - cancel a pending request owned by the logged-in employee
+router.post('/leave-requests/:id/cancel', requireAuth, (req, res) => {
+  const leaveId = req.params.id;
+  const employeeId = req.session.employee.employeeId;
+
+  const leave = leaveModel.getLeaveById(leaveId);
+
+  if (!leave) {
+    req.session.flash = { type: 'error', message: 'Leave request not found.' };
     return res.redirect('/leave-status');
   }
 
-  const employeeId = req.session.employee.employeeId;
+  if (leave.employeeId !== employeeId) {
+    req.session.flash = { type: 'error', message: 'You are not authorized to cancel this leave request.' };
+    return res.redirect('/leave-status');
+  }
+
+  if (String(leave.status).toLowerCase() !== 'pending') {
+    req.session.flash = { type: 'error', message: 'Only pending leave requests can be cancelled.' };
+    return res.redirect('/leave-status');
+  }
 
   let ok = false;
-  if (leaveModel && typeof leaveModel.cancelPendingLeave === 'function') {
-    const result = leaveModel.cancelPendingLeave({ id, employeeId });
-    ok = !!(result && (result.ok === true || result === true));
-  } else if (leaveModel && typeof leaveModel.getLeaveById === 'function' && typeof leaveModel.updateLeave === 'function') {
-    const leave = leaveModel.getLeaveById(id);
-    if (leave && String(leave.employeeId) === String(employeeId) && String(leave.status).toLowerCase() === 'pending') {
-      ok = !!leaveModel.updateLeave(id, { status: 'Cancelled' });
-    }
+  if (typeof leaveModel.cancelLeave === 'function') {
+    ok = !!leaveModel.cancelLeave(leaveId, employeeId);
+  } else if (typeof leaveModel.updateLeaveStatus === 'function') {
+    ok = !!leaveModel.updateLeaveStatus(leaveId, 'Cancelled', { cancelledBy: employeeId });
+  } else if (typeof leaveModel.updateLeave === 'function') {
+    ok = !!leaveModel.updateLeave(leaveId, { status: 'Cancelled' });
   }
 
   req.session.flash = ok
@@ -176,9 +173,7 @@ router.get('/manager/leave-requests', requireManager, (req, res) => {
 router.post('/leave-requests/:id/approve', requireManager, (req, res) => {
   const leaveId = req.params.id;
 
-  const leave =
-    (typeof leaveModel.getLeaveById === 'function' ? leaveModel.getLeaveById(leaveId) : null) ||
-    (typeof leaveModel.getLeave === 'function' ? leaveModel.getLeave(leaveId) : null);
+  const leave = leaveModel.getLeaveById(leaveId);
 
   if (!leave) {
     req.session.flash = { type: 'error', message: 'Leave request not found.' };
@@ -216,9 +211,7 @@ router.post('/leave-requests/:id/reject', requireManager, (req, res) => {
     return res.redirect('/manager/leave-requests');
   }
 
-  const leave =
-    (typeof leaveModel.getLeaveById === 'function' ? leaveModel.getLeaveById(leaveId) : null) ||
-    (typeof leaveModel.getLeave === 'function' ? leaveModel.getLeave(leaveId) : null);
+  const leave = leaveModel.getLeaveById(leaveId);
 
   if (!leave) {
     req.session.flash = { type: 'error', message: 'Leave request not found.' };
