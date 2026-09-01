@@ -17,6 +17,11 @@ function normalizeDateParam(value) {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
+function parseIntId(value) {
+  const n = Number.parseInt(String(value), 10);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 // GET /apply-leave - show the leave application form
 router.get('/apply-leave', requireAuth, (req, res) => {
   res.render('apply-leave', {
@@ -91,7 +96,8 @@ router.get('/leave-status', requireAuth, (req, res) => {
       ? employeeModel.getEmployeeById(employeeId)
       : null) || req.session.employee;
 
-  const lastSeenAt = employeeRecord && employeeRecord.leaveStatusLastSeenAt ? new Date(employeeRecord.leaveStatusLastSeenAt) : null;
+  const lastSeenAt =
+    employeeRecord && employeeRecord.leaveStatusLastSeenAt ? new Date(employeeRecord.leaveStatusLastSeenAt) : null;
 
   if (lastSeenAt && !Number.isNaN(lastSeenAt.getTime()) && typeof leaveModel.getStatusUpdatesSince === 'function') {
     const updatesSinceLastSeen = leaveModel.getStatusUpdatesSince(employeeId, lastSeenAt) || [];
@@ -129,37 +135,25 @@ router.get('/leave-status', requireAuth, (req, res) => {
   });
 });
 
-// POST /leave-requests/:id/cancel - cancel a pending request owned by the logged-in employee
-router.post('/leave-requests/:id/cancel', requireAuth, (req, res) => {
-  const leaveId = req.params.id;
+// POST /leave/:id/cancel - cancel a pending request owned by the logged-in employee
+router.post('/leave/:id/cancel', requireAuth, (req, res) => {
+  const id = parseIntId(req.params.id);
+  if (!id) {
+    req.session.flash = { type: 'error', message: 'Unable to cancel leave request. Please try again.' };
+    return res.redirect('/leave-status');
+  }
+
   const employeeId = req.session.employee.employeeId;
 
-  const leave =
-    (typeof leaveModel.getLeaveById === 'function' ? leaveModel.getLeaveById(leaveId) : null) ||
-    (typeof leaveModel.getLeave === 'function' ? leaveModel.getLeave(leaveId) : null);
-
-  if (!leave) {
-    req.session.flash = { type: 'error', message: 'Leave request not found.' };
-    return res.redirect('/leave-status');
-  }
-
-  if (leave.employeeId !== employeeId) {
-    req.session.flash = { type: 'error', message: 'You are not authorized to cancel this leave request.' };
-    return res.redirect('/leave-status');
-  }
-
-  if (String(leave.status).toLowerCase() !== 'pending') {
-    req.session.flash = { type: 'error', message: 'Only pending leave requests can be cancelled.' };
-    return res.redirect('/leave-status');
-  }
-
   let ok = false;
-  if (typeof leaveModel.cancelLeave === 'function') {
-    ok = !!leaveModel.cancelLeave(leaveId, { cancelledBy: employeeId });
-  } else if (typeof leaveModel.updateLeaveStatus === 'function') {
-    ok = !!leaveModel.updateLeaveStatus(leaveId, 'Cancelled', { cancelledBy: employeeId });
-  } else if (typeof leaveModel.updateLeave === 'function') {
-    ok = !!leaveModel.updateLeave(leaveId, { status: 'Cancelled' });
+  if (leaveModel && typeof leaveModel.cancelPendingLeave === 'function') {
+    const result = leaveModel.cancelPendingLeave({ id, employeeId });
+    ok = !!(result && (result.ok === true || result === true));
+  } else if (leaveModel && typeof leaveModel.getLeaveById === 'function' && typeof leaveModel.updateLeave === 'function') {
+    const leave = leaveModel.getLeaveById(id);
+    if (leave && String(leave.employeeId) === String(employeeId) && String(leave.status).toLowerCase() === 'pending') {
+      ok = !!leaveModel.updateLeave(id, { status: 'Cancelled' });
+    }
   }
 
   req.session.flash = ok

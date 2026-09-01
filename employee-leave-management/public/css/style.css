@@ -283,6 +283,16 @@ textarea {
   background: #cbd5e1;
 }
 
+/* Danger button + hover */
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  filter: brightness(0.92);
+}
+
 .btn-block {
   width: 100%;
 }
@@ -391,10 +401,11 @@ textarea {
   color: var(--color-danger);
 }
 
-/* Cancelled status */
+/* Cancelled status (muted gray) */
 .status-cancelled {
-  background: #e2e8f0;
+  background: #f1f5f9;
   color: var(--color-secondary);
+  border: 1px solid var(--color-border);
 }
 
 /* Updated indicator + optional row highlight */
@@ -482,4 +493,19 @@ textarea {
   .page {
     padding: 20px 16px 48px;
   }
+}
+
+/* ---------- Duplicates at end (kept for backward-compat) ---------- */
+.status-cancelled {
+  background: #e2e8f0;
+  color: var(--color-secondary);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  filter: brightness(0.95);
 }
