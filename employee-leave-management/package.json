@@ -4,7 +4,8 @@
   "description": "Employee Leave Management System - a simple Node.js/Express/SQLite web application for applying and tracking employee leave requests.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest --runInBand"
   },
   "license": "MIT",
   "dependencies": {
@@ -13,5 +14,9 @@
     "ejs": "^3.1.10",
     "better-sqlite3": "^11.3.0",
     "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "jest": "^30.5.0",
+    "supertest": "^7.2.2"
   }
 }

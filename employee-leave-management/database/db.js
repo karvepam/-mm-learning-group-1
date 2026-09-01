@@ -6,7 +6,9 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
 
-const dbPath = path.join(__dirname, 'database.db');
+// Allows tests (or any other caller) to point the app at an isolated
+// database file instead of the real database.db on disk.
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'database.db');
 const db = new Database(dbPath);
 
 // Enforce foreign key constraints between leaves.employeeId and employees.employeeId
