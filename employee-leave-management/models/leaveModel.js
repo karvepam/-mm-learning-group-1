@@ -71,6 +71,15 @@ function createLeave({ employeeId, leaveType, fromDate, toDate, reason }) {
 }
 
 /**
+ * Get a leave row by id.
+ * @param {number} id
+ * @returns {object|null}
+ */
+function getLeaveById(id) {
+  return db.prepare('SELECT * FROM leaves WHERE id = ?').get(id) ?? null;
+}
+
+/**
  * All leave requests submitted by a given employee, most recent first.
  * @param {string} employeeId
  * @returns {object[]}
@@ -234,6 +243,35 @@ function cancelLeave(id, employeeId) {
 }
 
 /**
+ * Cancel a leave request if it belongs to employeeId AND current status is Pending.
+ * Returns an object describing the outcome.
+ * @param {{id: number, employeeId: string}} params
+ * @returns {{ok: true} | {ok: false, reason: string}}
+ */
+function cancelPendingLeave({ id, employeeId }) {
+  const leave = getLeaveById(id);
+
+  if (!leave) return { ok: false, reason: 'NOT_FOUND' };
+  if (leave.employeeId !== employeeId) return { ok: false, reason: 'FORBIDDEN' };
+  if (leave.status !== LEAVE_STATUSES.PENDING) return { ok: false, reason: 'NOT_PENDING' };
+
+  const nowIso = new Date().toISOString();
+
+  const result = db
+    .prepare(
+      `UPDATE leaves
+       SET status = ?,
+           cancelledAt = ?,
+           statusUpdatedAt = ?
+       WHERE id = ? AND employeeId = ? AND status = ?`
+    )
+    .run(LEAVE_STATUSES.CANCELLED, nowIso, nowIso, id, employeeId, LEAVE_STATUSES.PENDING);
+
+  if (result.changes === 0) return { ok: false, reason: 'NOT_UPDATED' };
+  return { ok: true };
+}
+
+/**
  * Get leaves for an employee whose status has been updated since the provided timestamp.
  * statusUpdatedAt is stored as ISO date-time TEXT, so lexicographic comparison works.
  * @param {string} employeeId
@@ -259,6 +297,7 @@ module.exports = {
   LEAVE_STATUSES,
   countDays,
   createLeave,
+  getLeaveById,
   getLeavesByEmployeeId,
   getLeavesByEmployeeIdFiltered,
   getLeaveSummary,
@@ -266,5 +305,6 @@ module.exports = {
   approveLeave,
   rejectLeave,
   cancelLeave,
+  cancelPendingLeave,
   getStatusUpdatesSince,
 };
