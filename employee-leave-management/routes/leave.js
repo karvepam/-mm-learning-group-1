@@ -282,4 +282,24 @@ router.post('/leave-requests/:id/reject', requireManager, (req, res) => {
   res.redirect('/manager/leave-requests');
 });
 
+// POST /leave/:id/cancel - cancel a pending request owned by the logged-in employee
+router.post('/leave/:id/cancel', requireAuth, (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    req.session.flash = { type: 'error', message: 'Unable to cancel leave request.' };
+    return res.redirect('/leave-status');
+  }
+
+  const result = leaveModel.cancelPendingLeave({ id, employeeId: req.session.employee.employeeId });
+
+  if (result && result.ok) {
+    req.session.flash = { type: 'success', message: 'Leave request cancelled.' };
+  } else {
+    req.session.flash = { type: 'error', message: 'Unable to cancel leave request.' };
+  }
+
+  res.redirect('/leave-status');
+});
+
 module.exports = router;
