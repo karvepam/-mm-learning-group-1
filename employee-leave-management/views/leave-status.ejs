@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Leave Status - Employee Leave Management System</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <%- include('partials/nav', { active: 'leave-status' }) %>
@@ -36,10 +36,12 @@
             </tr>
           </thead>
           <tbody>
-            <% leaves.forEach(function(leave) { %>
+            <% leaves.forEach(function (leave) { %>
               <%
                 const leaveStatus = (leave && leave.status ? String(leave.status) : '');
-                const isPending = leaveStatus === 'Pending';
+                const normalizedStatus = leaveStatus.trim();
+                const statusClass = normalizedStatus ? normalizedStatus.toLowerCase().replace(/\s+/g, '-') : 'unknown';
+                const isPending = normalizedStatus.toLowerCase() === 'pending';
               %>
               <tr>
                 <td><%= leave.id %></td>
@@ -49,7 +51,7 @@
                 <td><%= leave.reason %></td>
                 <td><%= leave.appliedDate %></td>
                 <td>
-                  <span class="status-badge status-<%= leaveStatus.toLowerCase() %>"><%= leaveStatus %></span>
+                  <span class="status-badge status-<%= statusClass %>"><%= normalizedStatus || 'Unknown' %></span>
                 </td>
                 <td>
                   <% if (isPending) { %>
@@ -57,7 +59,7 @@
                       <button type="submit" class="btn btn-danger">Cancel</button>
                     </form>
                   <% } else { %>
-                    -
+                    <span>-</span>
                   <% } %>
                 </td>
               </tr>
