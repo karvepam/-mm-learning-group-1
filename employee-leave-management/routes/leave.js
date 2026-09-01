@@ -149,6 +149,11 @@ router.post('/leave/:id/cancel', requireAuth, (req, res) => {
   if (leaveModel && typeof leaveModel.cancelPendingLeave === 'function') {
     const result = leaveModel.cancelPendingLeave({ id, employeeId });
     ok = !!(result && (result.ok === true || result === true));
+  } else if (leaveModel && typeof leaveModel.getLeaveById === 'function' && typeof leaveModel.updateLeave === 'function') {
+    const leave = leaveModel.getLeaveById(id);
+    if (leave && String(leave.employeeId) === String(employeeId) && String(leave.status).toLowerCase() === 'pending') {
+      ok = !!leaveModel.updateLeave(id, { status: 'Cancelled' });
+    }
   }
 
   req.session.flash = ok
