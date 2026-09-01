@@ -15,66 +15,7 @@
     <h1 class="page-title">My Leave Requests</h1>
     <p class="page-subtitle">Track the status of every leave request you have submitted.</p>
 
-    <% if (typeof updatesSinceLastSeen !== 'undefined' && updatesSinceLastSeen) { %>
-      <div class="alert alert-success" role="status" aria-live="polite">
-        Some of your leave requests have been updated since your last visit.
-      </div>
-    <% } %>
-
-    <section class="filters" aria-label="Filter leave requests">
-      <form method="GET" action="/leave-status" class="filter-form">
-        <div class="filter-row">
-          <div class="form-group">
-            <label for="status">Status</label>
-            <select id="status" name="status">
-              <%
-                const selectedStatus =
-                  (typeof filters !== 'undefined' && filters && filters.status) ? String(filters.status) :
-                  (typeof query !== 'undefined' && query && query.status) ? String(query.status) :
-                  (typeof status !== 'undefined' && status) ? String(status) :
-                  '';
-              %>
-              <option value="" <%= !selectedStatus ? 'selected' : '' %>>All</option>
-              <option value="Pending" <%= selectedStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
-              <option value="Approved" <%= selectedStatus === 'Approved' ? 'selected' : '' %>>Approved</option>
-              <option value="Rejected" <%= selectedStatus === 'Rejected' ? 'selected' : '' %>>Rejected</option>
-              <option value="Cancelled" <%= selectedStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="from">From date</label>
-            <%
-              const selectedFrom =
-                (typeof filters !== 'undefined' && filters && filters.from) ? String(filters.from) :
-                (typeof query !== 'undefined' && query && query.from) ? String(query.from) :
-                (typeof from !== 'undefined' && from) ? String(from) :
-                '';
-            %>
-            <input id="from" name="from" type="date" value="<%= selectedFrom %>">
-          </div>
-
-          <div class="form-group">
-            <label for="to">To date</label>
-            <%
-              const selectedTo =
-                (typeof filters !== 'undefined' && filters && filters.to) ? String(filters.to) :
-                (typeof query !== 'undefined' && query && query.to) ? String(query.to) :
-                (typeof to !== 'undefined' && to) ? String(to) :
-                '';
-            %>
-            <input id="to" name="to" type="date" value="<%= selectedTo %>">
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Apply</button>
-            <a href="/leave-status" class="btn btn-secondary">Clear</a>
-          </div>
-        </div>
-      </form>
-    </section>
-
-    <% if (leaves.length === 0) { %>
+    <% if (!leaves || leaves.length === 0) { %>
       <div class="empty-state">
         <p>You haven't submitted any leave requests yet.</p>
         <a href="/apply-leave" class="btn btn-primary">Apply for Leave</a>
@@ -91,23 +32,16 @@
               <th>Reason</th>
               <th>Applied Date</th>
               <th>Status</th>
-              <th>Rejection Reason</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <%
-              const updatedSet = new Set((typeof updatedIds !== 'undefined' && Array.isArray(updatedIds)) ? updatedIds.map(String) : []);
-            %>
             <% leaves.forEach(function(leave) { %>
               <%
-                const leaveStatus = (leave.status || '').toString();
-                const isUpdated = updatedSet.has(String(leave.id));
-                const isRejected = leaveStatus.toLowerCase() === 'rejected';
-                const rejectionReason = (leave.rejectionReason || leave.rejection_reason || leave.rejectedReason || '').toString();
-                const isPending = leaveStatus.toLowerCase() === 'pending';
+                const leaveStatus = (leave && leave.status ? String(leave.status) : '');
+                const isPending = leaveStatus === 'Pending';
               %>
-              <tr class="<%= isUpdated ? 'row-updated' : '' %>">
+              <tr>
                 <td><%= leave.id %></td>
                 <td><%= leave.leaveType %></td>
                 <td><%= leave.fromDate %></td>
@@ -116,21 +50,6 @@
                 <td><%= leave.appliedDate %></td>
                 <td>
                   <span class="status-badge status-<%= leaveStatus.toLowerCase() %>"><%= leaveStatus %></span>
-                  <% if (isUpdated) { %>
-                    <span class="status-badge status-updated" style="margin-left: 0.5rem;">Updated</span>
-                  <% } %>
-                  <% if (isRejected && rejectionReason) { %>
-                    <div class="text-muted" style="margin-top: 0.25rem;">
-                      <small><strong>Reason:</strong> <%= rejectionReason %></small>
-                    </div>
-                  <% } %>
-                </td>
-                <td>
-                  <% if (isRejected) { %>
-                    <%= rejectionReason ? rejectionReason : '-' %>
-                  <% } else { %>
-                    -
-                  <% } %>
                 </td>
                 <td>
                   <% if (isPending) { %>
