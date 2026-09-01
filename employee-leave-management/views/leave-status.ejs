@@ -104,8 +104,8 @@
                 const leaveStatus = (leave.status || '').toString();
                 const isUpdated = updatedSet.has(String(leave.id));
                 const isRejected = leaveStatus.toLowerCase() === 'rejected';
-                const isPending = leaveStatus.toLowerCase() === 'pending';
                 const rejectionReason = (leave.rejectionReason || leave.rejection_reason || leave.rejectedReason || '').toString();
+                const isPending = leaveStatus.toLowerCase() === 'pending';
               %>
               <tr class="<%= isUpdated ? 'row-updated' : '' %>">
                 <td><%= leave.id %></td>
@@ -133,9 +133,9 @@
                   <% } %>
                 </td>
                 <td>
-                  <% if (leaveStatus === 'Pending') { %>
+                  <% if (isPending) { %>
                     <form method="POST" action="/leave/<%= leave.id %>/cancel" style="display:inline;" onsubmit="return confirm('Cancel this leave request?');">
-                      <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                      <button type="submit" class="btn btn-danger">Cancel</button>
                     </form>
                   <% } else { %>
                     -
