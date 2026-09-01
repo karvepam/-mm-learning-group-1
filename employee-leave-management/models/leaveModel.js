@@ -88,33 +88,6 @@ function getLeaveSummary(employeeId) {
 }
 
 /**
- * Fetch a leave request by its primary key.
- * @param {number} id
- * @returns {object|undefined}
- */
-function getLeaveById(id) {
-  return db.prepare('SELECT * FROM leaves WHERE id = ?').get(id);
-}
-
-/**
- * Cancel a pending leave request for the provided employee.
- * @param {{id: number, employeeId: string}} params
- * @returns {{ok: true} | {ok: false, reason: 'not_found'|'forbidden'|'not_pending'}}
- */
-function cancelPendingLeave({ id, employeeId }) {
-  const leave = getLeaveById(id);
-  if (!leave) return { ok: false, reason: 'not_found' };
-  if (leave.employeeId !== employeeId) return { ok: false, reason: 'forbidden' };
-  if (leave.status !== 'Pending') return { ok: false, reason: 'not_pending' };
-
-  const result = db
-    .prepare("UPDATE leaves SET status = 'Cancelled' WHERE id = ? AND employeeId = ? AND status = 'Pending'")
-    .run(id, employeeId);
-
-  return result.changes === 1 ? { ok: true } : { ok: false, reason: 'not_pending' };
-}
-
-/**
  * Fetch a leave request row by its primary key.
  * @param {number} id
  * @returns {object|null}
