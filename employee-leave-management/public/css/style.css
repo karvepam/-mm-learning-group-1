@@ -283,7 +283,7 @@ textarea {
   background: #cbd5e1;
 }
 
-/* Re-applied: danger button + hover */
+/* Danger button + hover */
 .btn-danger {
   background: var(--color-danger);
   color: #fff;
@@ -401,7 +401,7 @@ textarea {
   color: var(--color-danger);
 }
 
-/* Re-applied: Cancelled status (muted gray) */
+/* Cancelled status (muted gray) */
 .status-cancelled {
   background: #f1f5f9;
   color: var(--color-secondary);
