@@ -212,7 +212,13 @@ function rejectLeave(id, rejectionReason) {
            statusUpdatedAt = ?
        WHERE id = ? AND status = ?`
     )
-    .run(LEAVE_STATUSES.REJECTED, rejectionReason ?? null, statusUpdatedAt, id, LEAVE_STATUSES.PENDING);
+    .run(
+      LEAVE_STATUSES.REJECTED,
+      rejectionReason ?? null,
+      statusUpdatedAt,
+      id,
+      LEAVE_STATUSES.PENDING
+    );
 
   if (result.changes === 0) return null;
   return db.prepare('SELECT * FROM leaves WHERE id = ?').get(id);
@@ -251,24 +257,16 @@ function cancelLeave(id, employeeId) {
 function cancelPendingLeave({ id, employeeId }) {
   const leave = getLeaveById(id);
 
-  if (!leave) return { ok: false, reason: 'NOT_FOUND' };
-  if (leave.employeeId !== employeeId) return { ok: false, reason: 'FORBIDDEN' };
-  if (leave.status !== LEAVE_STATUSES.PENDING) return { ok: false, reason: 'NOT_PENDING' };
-
-  const nowIso = new Date().toISOString();
+  if (!leave) return { ok: false, reason: 'not_found' };
+  if (leave.employeeId !== employeeId) return { ok: false, reason: 'forbidden' };
+  if (leave.status !== LEAVE_STATUSES.PENDING) return { ok: false, reason: 'not_pending' };
 
   const result = db
-    .prepare(
-      `UPDATE leaves
-       SET status = ?,
-           cancelledAt = ?,
-           statusUpdatedAt = ?
-       WHERE id = ? AND employeeId = ? AND status = ?`
-    )
-    .run(LEAVE_STATUSES.CANCELLED, nowIso, nowIso, id, employeeId, LEAVE_STATUSES.PENDING);
+    .prepare(`UPDATE leaves SET status = ? WHERE id = ? AND employeeId = ? AND status = ?`)
+    .run(LEAVE_STATUSES.CANCELLED, id, employeeId, LEAVE_STATUSES.PENDING);
 
-  if (result.changes === 0) return { ok: false, reason: 'NOT_UPDATED' };
-  return { ok: true };
+  if (result.changes === 1) return { ok: true };
+  return { ok: false, reason: 'not_pending' };
 }
 
 /**
