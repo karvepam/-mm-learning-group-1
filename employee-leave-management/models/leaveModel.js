@@ -154,6 +154,44 @@ function getLeaveSummary(employeeId) {
 }
 
 /**
+ * Fetch a leave request row by its primary key.
+ * @param {number} id
+ * @returns {object|undefined}
+ */
+function getLeaveById(id) {
+  return db.prepare('SELECT * FROM leaves WHERE id = ?').get(id);
+}
+
+/**
+ * Cancel a pending leave request that belongs to the given employee.
+ * @param {{id: number, employeeId: string}} params
+ * @returns {{ok: true} | {ok: false, reason: 'not_found'|'forbidden'|'not_pending'}}
+ */
+function cancelPendingLeave({ id, employeeId }) {
+  const leave = getLeaveById(id);
+  if (!leave) {
+    return { ok: false, reason: 'not_found' };
+  }
+  if (leave.employeeId !== employeeId) {
+    return { ok: false, reason: 'forbidden' };
+  }
+  if (leave.status !== 'Pending') {
+    return { ok: false, reason: 'not_pending' };
+  }
+
+  const result = db
+    .prepare("UPDATE leaves SET status = 'Cancelled' WHERE id = ? AND employeeId = ? AND status = 'Pending'")
+    .run(id, employeeId);
+
+  if (result.changes === 1) {
+    return { ok: true };
+  }
+
+  // If something changed between read and update, treat as not pending.
+  return { ok: false, reason: 'not_pending' };
+}
+
+/**
  * Pending leaves list for managers, joined with employees to include employee name.
  * @returns {object[]}
  */
