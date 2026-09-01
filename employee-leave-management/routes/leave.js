@@ -96,7 +96,8 @@ router.get('/leave-status', requireAuth, (req, res) => {
       ? employeeModel.getEmployeeById(employeeId)
       : null) || req.session.employee;
 
-  const lastSeenAt = employeeRecord && employeeRecord.leaveStatusLastSeenAt ? new Date(employeeRecord.leaveStatusLastSeenAt) : null;
+  const lastSeenAt =
+    employeeRecord && employeeRecord.leaveStatusLastSeenAt ? new Date(employeeRecord.leaveStatusLastSeenAt) : null;
 
   if (lastSeenAt && !Number.isNaN(lastSeenAt.getTime()) && typeof leaveModel.getStatusUpdatesSince === 'function') {
     const updatesSinceLastSeen = leaveModel.getStatusUpdatesSince(employeeId, lastSeenAt) || [];
@@ -148,46 +149,6 @@ router.post('/leave/:id/cancel', requireAuth, (req, res) => {
   if (leaveModel && typeof leaveModel.cancelPendingLeave === 'function') {
     const result = leaveModel.cancelPendingLeave({ id, employeeId });
     ok = !!(result && (result.ok === true || result === true));
-  }
-
-  req.session.flash = ok
-    ? { type: 'success', message: 'Leave request cancelled successfully.' }
-    : { type: 'error', message: 'Unable to cancel leave request. Please try again.' };
-
-  res.redirect('/leave-status');
-});
-
-// POST /leave-requests/:id/cancel - cancel a pending request owned by the logged-in employee
-router.post('/leave-requests/:id/cancel', requireAuth, (req, res) => {
-  const leaveId = req.params.id;
-  const employeeId = req.session.employee.employeeId;
-
-  const leave =
-    (typeof leaveModel.getLeaveById === 'function' ? leaveModel.getLeaveById(leaveId) : null) ||
-    (typeof leaveModel.getLeave === 'function' ? leaveModel.getLeave(leaveId) : null);
-
-  if (!leave) {
-    req.session.flash = { type: 'error', message: 'Leave request not found.' };
-    return res.redirect('/leave-status');
-  }
-
-  if (leave.employeeId !== employeeId) {
-    req.session.flash = { type: 'error', message: 'You are not authorized to cancel this leave request.' };
-    return res.redirect('/leave-status');
-  }
-
-  if (String(leave.status).toLowerCase() !== 'pending') {
-    req.session.flash = { type: 'error', message: 'Only pending leave requests can be cancelled.' };
-    return res.redirect('/leave-status');
-  }
-
-  let ok = false;
-  if (typeof leaveModel.cancelLeave === 'function') {
-    ok = !!leaveModel.cancelLeave(leaveId, { cancelledBy: employeeId });
-  } else if (typeof leaveModel.updateLeaveStatus === 'function') {
-    ok = !!leaveModel.updateLeaveStatus(leaveId, 'Cancelled', { cancelledBy: employeeId });
-  } else if (typeof leaveModel.updateLeave === 'function') {
-    ok = !!leaveModel.updateLeave(leaveId, { status: 'Cancelled' });
   }
 
   req.session.flash = ok
