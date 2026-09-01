@@ -17,6 +17,11 @@ function normalizeDateParam(value) {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
+function parseIntId(value) {
+  const n = Number.parseInt(String(value), 10);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 // GET /apply-leave - show the leave application form
 router.get('/apply-leave', requireAuth, (req, res) => {
   res.render('apply-leave', {
@@ -127,6 +132,28 @@ router.get('/leave-status', requireAuth, (req, res) => {
     updatedIds,
     updatesBannerMessage,
   });
+});
+
+// POST /leave/:id/cancel - cancel a pending request owned by the logged-in employee
+router.post('/leave/:id/cancel', requireAuth, (req, res) => {
+  const id = parseIntId(req.params.id);
+  if (!id) {
+    req.session.flash = { type: 'error', message: 'Unable to cancel leave request. Please try again.' };
+    return res.redirect('/leave-status');
+  }
+
+  const employeeId = req.session.employee.employeeId;
+
+  let ok = false;
+  if (leaveModel && typeof leaveModel.cancelPendingLeave === 'function') {
+    ok = !!leaveModel.cancelPendingLeave({ id, employeeId });
+  }
+
+  req.session.flash = ok
+    ? { type: 'success', message: 'Leave request cancelled successfully.' }
+    : { type: 'error', message: 'Unable to cancel leave request. Please try again.' };
+
+  res.redirect('/leave-status');
 });
 
 // POST /leave-requests/:id/cancel - cancel a pending request owned by the logged-in employee
